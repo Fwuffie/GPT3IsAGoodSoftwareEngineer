@@ -1,2 +1,4 @@
 /GPT3JobEnv
-/__pycache__
+*.pyc
+*.pyo
+secrets.json
