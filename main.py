@@ -1,6 +1,9 @@
+import json, openai
 from JobsiteSniffers.SampleJobsniffer import SampleJobsniffer
 
-test = iter(SampleJobsniffer())
+#Load Secret keys
+fSecrets = open("secrets.json", "r")
+secrets = json.load(fSecrets)
+fSecrets.close()
 
-for t in test:
-	print(t)
+openai.api_key = secrets['OpenAISecret']
