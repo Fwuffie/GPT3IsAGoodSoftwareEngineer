@@ -20,9 +20,30 @@ benifitsSample = ["Health insurance",
 "Student loan repayment benefits",
 "Home office improvement incentives for remote workers",
 "Sign-on bonuses"]
+requirementsSample = [
+"2+ years experience with modern backend technologies",
+"A desire to work on big complex projects with lots of creative freedom",
+"A passion for shipping high-quality products",
+"An interest in the crypto space, and a love for building tools that help users navigate the web3 world",
+"Empathetic and love to help your teammates grow",
+"You are proficient in TypeScript, JavaScript, or similar",
+"You have experience with GCP and Terraform",
+"You have a good understanding of database structures and can write some SQL",
+"You’ve written integrations against 3rd party systems and APIs",
+"You’ve built frontend UIs and have an understanding of accessibility",
+"You have an interest in using data and engineering to solve large-scale consumer problems, as well as a good sense for building products that consumers want to use",
+"You have at least 2 years of experience building distributed systems in Node.js using Typescript or JavaScript",
+"You care deeply about building reliable, well-tested systems",
+"You are great at explaining complicated technical concepts clearly",
+"Have an understanding of the principles of computer science",
+"Proficiency in building applications using React and TypeScript in production",
+"Write well-structured and high-quality code that’s easily maintainable by others",
+"Self-driven and capable of working with minimal supervision"
+]
+
 
 class SampleJobsniffer:
-	jobsToReturn = 5
+	jobsToReturn = 1
 
 	def __iter__(self):
 		self.count = 1
@@ -44,9 +65,12 @@ class SampleJobsniffer:
 		return
 
 	def generateJobListing(self):
+		JobSpec = ""
+		for i in range(0,random.randrange(5,10)):
+			JobSpec += '- %s\n' % fake.bs()
 		requirements = ""
-		for i in range(0,random.randrange(2,7)):
-			requirements += '- %s /n' % fake.bs()
+		for i in range(0,random.randrange(5,10)):
+			requirements += '- %s\n' % fake.random_choices(elements=requirementsSample, length=1)[0]
 		joblisting =	{
 							'Company': fake.company(),
 							'JobTitle': fake.job(),
@@ -54,7 +78,7 @@ class SampleJobsniffer:
 							'Tags': fake.random_choices(elements=tagsSample,length=random.randrange(2,5)),
 							'CompanyStatement': fake.bs(),
 							'Requirements': requirements,
-							'JobSpec': "",
+							'JobSpec': JobSpec,
 							'Technologies': fake.random_choices(elements=tecnologiesSample,length=random.randrange(2,6)),
 							'Location': fake.city(),
 							'Review': "",
@@ -63,6 +87,5 @@ class SampleJobsniffer:
 		return joblisting
 
 	def generateQuestions(self):
-		print(self.jobObj)
 		questions = ["Why do you want to work at %s?" % (self.jobObj['jobListing']['Company'])] 
 		return questions
