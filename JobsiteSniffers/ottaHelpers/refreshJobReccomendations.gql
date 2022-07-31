@@ -1,0 +1,8 @@
+mutation RefreshJobRecommendations {
+	refreshJobRecommendations(ignoreSubfunctions: true) {
+		job {
+			id
+			externalId
+		}
+	}
+}

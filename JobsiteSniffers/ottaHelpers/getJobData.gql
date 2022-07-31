@@ -1,0 +1,274 @@
+query ($externalId: ID!, $currency: Currency!) {
+	publicJob(externalId: $externalId) {
+			...Job
+			applied
+			latestReaction {
+				id
+				direction
+				__typename
+			}
+			__typename
+		}
+	}
+	fragment Job on Job {
+		id
+		externalId
+		title
+		subtitle
+		live
+		activelyHiring
+		hideSalary
+		acceptsInternalApplications
+		applicationQuestions {
+			id
+			atsId
+			value
+			type
+			required
+			prompt
+			choices {
+				id
+				label
+				value
+				__typename
+			}
+			__typename
+		}
+		salaryRange {
+			minAmount
+			maxAmount
+			currency
+			__typename
+		}
+		meetsMinSalaryPreference
+		otherCompensationInformation
+		internship
+		minYearsExperienceRequired
+		maxYearsExperienceRequired
+		originalUrl
+		insertedAt
+		validUntil
+		locationInformation
+		function {
+			id
+			value
+			__typename
+		}
+		subFunction {
+			id
+			value
+			__typename
+		}
+		technologiesUsed {
+			id
+			value
+			__typename
+		}
+		requirements {
+			id
+			value
+			desirable
+			__typename
+		}
+		languageRequirements {
+			id
+			value
+			__typename
+		}
+		involvesBullets {
+			id
+			value
+			__typename
+		}
+		applicationProcessBullets {
+			id
+			value
+			__typename
+		}
+		locationPreferences {
+			id
+			location
+			__typename
+		}
+		company {
+			...Company
+			__typename
+		}
+		remoteOnly
+		minDaysInOffice
+		maxDaysInOffice
+		officeLocation
+		locationRestrictions
+		__typename
+	}
+	fragment Company on Company {
+		id
+		name
+		logoPath
+		primaryColour
+		websiteUrl
+		workflowStatus
+		ottaCertified
+		totalFunding(currency: $currency) {
+			amount
+			currency
+			__typename
+		}
+		fundingRounds(limit: 2, currency: $currency) {
+			id
+			month
+			year
+			funding {
+				amount
+				currency
+				__typename
+			}
+			__typename
+		}
+		investors(limit: 10, onlyTop: true) {
+			id
+			value
+			topInvestor
+			__typename
+		}
+		shortDescription
+		trustpilotRating
+		glassdoorRating
+		mission
+		visaSponsorshipCountries {
+			id
+			location
+			__typename
+		}
+		glassdoorUrl
+		trustpilotUrl
+		numberLiveJobs
+		numberEmployees
+		percentageFemale
+		yearEmployeeGrowthPercentage
+		integratedWithDealroom
+		bcorp
+		featuredRecruiter {
+			id
+			firstName
+			lastName
+			profileImagePath
+			currentTitle
+			__typename
+		}
+		photos {
+			id
+			path
+			__typename
+		}
+		articles {
+			id
+			title
+			url
+			__typename
+		}
+		additionalInfoBullets {
+			id
+			value
+			__typename
+		}
+		diversityAuthorProfileImagePath
+		diversityAuthorFullName
+		diversityAuthorTitle
+		diversityInitiatives {
+			id
+			value
+			__typename
+		}
+		peopleProgressing {
+			id
+			name
+			bio
+			linkedinUrl
+			__typename
+		}
+		founders {
+			id
+			name
+			title
+			bio
+			gender
+			linkedinUrl
+			__typename
+		}
+		otherBenefits {
+			id
+			value
+			location
+			__typename
+		}
+		marketBullets {
+			id
+			value
+			__typename
+		}
+		sectorTags {
+			id
+			value
+			__typename
+		}
+		size {
+			id
+			value
+			__typename
+		}
+		jobLocations
+		values {
+			id
+			value
+			__typename
+		}
+		responseRate
+		responseCountByCategory {
+			id
+			categoryName
+			count
+			__typename
+		}
+		numberEmployeeSurveys
+		employeeSurveys {
+			id
+			jobFunction {
+				id
+				value
+				__typename
+			}
+			submittedAt
+			responses {
+				id
+				content
+				category {
+					id
+					name
+					__typename
+				}
+				__typename
+			}
+			__typename
+		}
+		urlSafeName
+		parsedHqAddress
+		companyJobs: jobs {
+			id
+			externalId
+			title
+			subtitle
+			locationPreferences {
+				id
+				location
+				__typename
+			}
+			function {
+				id
+				value
+				__typename
+			}
+			__typename
+		}
+		__typename
+	}

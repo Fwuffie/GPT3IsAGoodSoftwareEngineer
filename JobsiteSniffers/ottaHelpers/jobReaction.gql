@@ -1,0 +1,9 @@
+mutation CreateJobReaction($jobId: ID!, $direction: Boolean!, $reason: String) {
+  createJobReaction(jobId: $jobId, direction: $direction, reason: $reason) {
+    id
+    reason
+    direction
+    updatedAt
+    __typename
+  }
+}
