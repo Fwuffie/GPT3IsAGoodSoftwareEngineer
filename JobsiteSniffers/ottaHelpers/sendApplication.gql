@@ -1,0 +1,9 @@
+mutation UpdateJobApplication($jobId: ID!, $input: JobApplicationInput!) {
+  updateJobApplication(jobId: $jobId, input: $input) {
+    id
+    applied
+    clicked
+    internal
+    __typename
+  }
+}

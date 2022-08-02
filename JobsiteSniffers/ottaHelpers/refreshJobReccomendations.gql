@@ -3,6 +3,7 @@ mutation RefreshJobRecommendations {
 		job {
 			id
 			externalId
+			acceptsInternalApplications
 		}
 	}
 }

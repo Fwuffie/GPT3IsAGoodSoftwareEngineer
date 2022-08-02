@@ -1,0 +1,59 @@
+mutation UpsertJobApplicationQuestionResponse($jobId: ID!, $question: String!, $atsQuestionId: String, $input: ApplicationQuestionResponseInput) {
+  upsertJobApplicationQuestionResponse(
+    jobId: $jobId
+    question: $question
+    atsQuestionId: $atsQuestionId
+    input: $input
+  ) {
+    id
+    question
+    ...QuestionResponseData
+    __typename
+  }
+}
+
+fragment QuestionResponseData on JobApplicationQuestionResponse {
+  data {
+    ... on BooleanResponse {
+      booleanValue: value
+      __typename
+    }
+    ... on DateResponse {
+      date
+      __typename
+    }
+    ... on DecimalResponse {
+      decimalValue: value
+      __typename
+    }
+    ... on FileResponse {
+      fileUrl: url
+      name
+      contentType
+      __typename
+    }
+    ... on MultipleChoiceResponse {
+      choices {
+        label
+        value
+        __typename
+      }
+      __typename
+    }
+    ... on SingleChoiceResponse {
+      label
+      value
+      __typename
+    }
+    ... on StringResponse {
+      stringValue: value
+      __typename
+    }
+    ... on UrlResponse {
+      url
+      __typename
+    }
+    __typename
+  }
+  __typename
+}
