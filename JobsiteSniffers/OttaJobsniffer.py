@@ -46,8 +46,7 @@ class OttaJobsniffer:
 					"jobId":job['id'] , "direction": True
 				})
 				break;
-
-			return setupJob(externalID)
+		return self.setupJob(job['externalId'])
 		
 
 	def setupJob(self, externalID):
@@ -163,6 +162,9 @@ A: github.com/fwuffie
 
 Q: Which country are you from?
 A: Scotland, UK
+
+Q: Provide a link to a portfolio or website.
+A: portfolio.nyan.ca
 
 ''' % (
 		rawJobData['title'],

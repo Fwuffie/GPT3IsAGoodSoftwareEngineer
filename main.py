@@ -59,8 +59,8 @@ def applyToJob(job):
 	print("Application Successful... Maybe")
 	
 
-specificJob('Q1dncDV5')
-exit()
+# specificJob('UWZWQWF4')
+# exit()
 
 jobSniffers = [
 	OttaJobsniffer(secrets)
