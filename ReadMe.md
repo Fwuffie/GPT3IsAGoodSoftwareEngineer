@@ -1,6 +1,6 @@
 # GPT3 Is A Good Software Engineer
 
-A GPT3 App to simplify and automate the tedium of replying to the same questions over and over during job searches.
+A GPT3 App to automate job applications.
 
 ## Getting Started
 1. Create a Py Env with `python3 -m venv env` then activate
