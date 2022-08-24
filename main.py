@@ -1,78 +1,86 @@
-import json, openai
+import json, argparse
+from answeringEngine import answeringEngine, user
 from JobsiteSniffers.SampleJobsniffer import SampleJobsniffer
 from JobsiteSniffers.OttaJobsniffer import OttaJobsniffer
-
 
 #Load Secret keys
 fSecrets = open("secrets.json", "r")
 secrets = json.load(fSecrets)
 fSecrets.close()
 
-openai.api_key = secrets['OpenAISecret']
-debug = True
-manual = True
+
 
 def printDebug(text):
 	if debug:
 		print(text)
 
-def askGPT(primedString, tokens=256, temp=1.3):
-	response = openai.Completion.create(
-	  model="text-davinci-002",
-	  prompt=primedString,
-	  max_tokens=tokens,
-	  temperature=temp
-	)
-	return response['choices'][0]['text'].lstrip('\n')
-
-def primeQuestion(listing, question):
-	#if question['type'] == "MULTIPLE_CHOICE":
-	#	choices = "\n".join(map(lambda x: x, question['choices']))
-	#	return "%s\nQ: %s (Type the number for the correct response)\n%s\n" % (listing, question['question'], choices)
-	#else:
-	return "%s\nQ: %s\nA: " % (listing, question['question'])
-
 def specificJob(jobid):
-	os = OttaJobsniffer(secrets)
-	job = os.setupJob( jobid )
-	applyToJob(job)
+	os = OttaJobsniffer(secrets['ottaJobsniffer'])
+	u = user(secrets["userInfo"])
+	ae = answeringEngine(secrets["OpenAISecret"], u)
 
-def applyToJob(job):
+	job = os.setupJob( jobid )
+	applyToJob(ae, job)
+
+def applyToJob(ae, job):
 	print("JobID: %s" % job['exid'])
 	print(job['listing'])
 	for i, question in enumerate(job['questions']):
-		if (question['type'] == 'TEXT' or question['type'] == 'TEXT_AREA'):
-			while True:
-				print("Q: %s (%s)" % (question['question'], question['type']))
-				questionResponse = askGPT(primeQuestion(job['listing'], question))
-				print("A: %s\n" % questionResponse)
+		if not question['type']: 
+			print("Skipped Question: %s (%s)" % (question['question'], question['rawtype']))
+			continue
+		while True:
+			print("Q: %s (%s)" % (question['question'], question['type']))
+			questionResponse = ae.answerQuestion(question['question'], question['type'], job['listing'])
+			print("A: %s\n" % questionResponse)
 
-				verification = input("Is this response okay? [y]:continue | [r]:regenerate | [e]:edit - ")
-				if verification.lower() == 'y':
-					break;
-				if verification.lower() == 'e':
-					questionResponse = input("Please enter a new response: ")
-					break;
-			job['questions'][i]['response'] = questionResponse
+			verification = input("Is this response okay? [y]:continue | [r]:regenerate | [e]:edit - ")
+			if verification.lower() == 'y':
+				break;
+			if verification.lower() == 'e':
+				questionResponse = input("Please enter a new response: ")
+				break;
+
+		job['questions'][i]['response'] = questionResponse
 	print("Applying to job...")
 	job['apply'](job['questions'])
 	print("Application Successful... Maybe")
 	
 
-# specificJob('UWZWQWF4')
-# exit()
 
-jobSniffers = [
-	OttaJobsniffer(secrets)
-]
+def main():
+	jobSniffers = []
 
-#convert Jobsniffers to iters
-jobSniffers = list(map(iter, jobSniffers))
+	try:
+		jobSniffers.append(OttaJobsniffer(secrets['ottaJobsniffer']))
+	except:
+		print("Error with %s Plugin" % ("OttaJobsniffer"))
 
-while True:
-	#Round Robin Jobsniffers
-	for jobSniffer in jobSniffers:
-		job = next(jobSniffer)
-		applyToJob(job)
-	continue
-	
+	#convert Jobsniffers to iters
+	jobSniffers = list(map(iter, jobSniffers))
+
+	u = user(secrets["userInfo"])
+	ae = answeringEngine(secrets["OpenAISecret"], u)
+
+	while jobSniffers:
+		#Round Robin Jobsniffers
+		for jobSniffer in jobSniffers:
+			try:
+				job = next(jobSniffer)
+			except StopIteration:
+				continue
+			applyToJob(ae, job)
+	return
+
+if __name__ == '__main__':
+	#Parse CLI Args
+	parser = argparse.ArgumentParser(description='Apply to Jobs Using GPT3.')
+	parser.add_argument('-j', '--jobid', action='store', default=False, type=str, required=False, help='Applies to a single job, provided by ID')
+	args = parser.parse_args()
+
+	if (args.jobid):
+		specificJob(args.jobid)
+	else:
+		main()
+
+	exit()

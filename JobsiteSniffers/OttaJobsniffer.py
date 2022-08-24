@@ -19,7 +19,12 @@ class OttaJobsniffer:
 
 	def __init__(self, secrets):
 		self.secrets = secrets
-		self.attemptLogin(self.secrets['ottaCredentials'])
+		try:
+			self.attemptLogin(self.secrets['credentials'])
+		except:
+			print("Could Not Log Into Otta.com, Invalid credentials Probably")
+			raise Exception("LOGIN_ERROR")
+			return
 		self.transport = AIOHTTPTransport(url=OttaGraphQLEndpoint, headers={'x-csrf-token': self.csrfToken, 'content-type': 'application/json'}, cookies={'_otta_session': self.sessionToken})
 		self.client = Client(transport=self.transport, fetch_schema_from_transport=True)
 		return
@@ -48,6 +53,12 @@ class OttaJobsniffer:
 				break;
 		return self.setupJob(job['externalId'])
 		
+	ottaQuestionTypeTranslation = {
+		"TEXT_AREA": "string",
+		"TEXT": "string",
+		"BOOLEAN": "bool",
+		"MULTIPLE_CHOICE": "multiple choice"
+	}
 
 	def setupJob(self, externalID):
 		self.externalJobID = externalID
@@ -57,14 +68,20 @@ class OttaJobsniffer:
 			questions.append({
 				"id": None,
 				"question": "Why do you want to work at %s?" % jobData['company']['urlSafeName'],
-				"type": "TEXT_AREA",
+				"type": "string",
+				"rawtype": "TEXT_AREA",
 				"response": None
 			})
 		for q in jobData['applicationQuestions']:
+			try:
+				qtype = self.ottaQuestionTypeTranslation[q['type']]
+			except:
+				qtype = None
 			questions.append({
 				"id": q['atsId'],
 				"question": q['value'],
-				"type": q['type'],
+				"type": qtype,
+				"rawtype": q['type'],
 				"response": None,
 				"choices": q['choices']
 			})
@@ -90,13 +107,44 @@ class OttaJobsniffer:
 		self.csrfToken = response.cookies.get_dict()['_csrf_token']
 		return
 
-	def updateQuestionResponse(self, question, response, questionId):
+	def updateQuestionResponse(self, q):
+		qtype= q['rawtype']
+
+		if qtype == 'TEXT' or qtype == 'TEXT_AREA':
+			return self.updateNormalQuestionResponse(q['question'], q['response'], q['id'], "stringResponse")
+		if qtype == 'MULTIPLE_CHOICE':
+			return  self.updateMultipleChoiceQuestionResponse(q['question'], q['response'], q['id'], q['choices'])
+		if qtype == 'BOOLEAN':
+			return  self.updateNormalQuestionResponse(q['question'], q['response'], q['id'], "booleanResponse")
+		if qtype == 'CHECKBOXES':
+			return  None
+		if qtype == 'DATE':
+			return  None
+		if qtype == 'NUMERIC':
+			return  self.updateNormalQuestionResponse(q['question'], q['response'], q['id'], "decimalRespomse")
+		return None
+
+	def updateNormalQuestionResponse(self, question, response, questionId, responseTypeString):
+		variables = {
+			"jobId": self.externalJobID,
+			"question": question,
+			"atsQuestionId": questionId,
+			"input": {}
+		}
+		variables["input"][responseTypeString] = response;
+		self.client.execute(jobUpdateQuestion, variable_values=variables)
+		return
+
+	def updateMultipleChoiceQuestionResponse(self, question, response, questionId, choices):
 		self.client.execute(jobUpdateQuestion, variable_values={
 			"jobId": self.externalJobID,
 			"question": question,
 			"atsQuestionId": questionId,
 			"input": {
-				"stringResponse": response
+				"singleChoiceResponse": {
+					"label": "Yes",
+					"value": "1",
+				}
 			}
 		})
 		return
@@ -117,15 +165,15 @@ class OttaJobsniffer:
 		self.sendApplication(False)
 		for q in qna:
 			try:
-				self.updateQuestionResponse(q['question'], q['response'], q['id'])
+				self.updateQuestionResponse(q)
 			except Exception as e:
 				print('Question "%s" failed.' % q['question'])
+				print(e)
 				errors = True
 		if not errors: self.sendApplication(True)
 		else: print("Complete the job application at https://app.otta.com/jobs/%s/apply" % self.externalJobID)
 		return
 
-	
 	def generateJobListing(self, rawJobData):
 		JobSpec = ""
 		for spec in map(lambda t: t['value'], rawJobData['involvesBullets']):
