@@ -8,6 +8,7 @@ fSecrets = open("secrets.json", "r")
 secrets = json.load(fSecrets)
 fSecrets.close()
 
+globalSettings;
 
 
 def printDebug(text):
@@ -31,8 +32,11 @@ def applyToJob(ae, job):
 			continue
 		while True:
 			print("Q: %s (%s)" % (question['question'], question['type']))
-			questionResponse = ae.answerQuestion(question['question'], question['type'], job['listing'])
+			questionResponse = ae.answerQuestion(question['question'], question['type'], job['listing'], choices = question['choices'])
 			print("A: %s\n" % questionResponse)
+
+			if globalSettings.automatic :
+				break;
 
 			verification = input("Is this response okay? [y]:continue | [r]:regenerate | [e]:edit - ")
 			if verification.lower() == 'y':
@@ -76,10 +80,11 @@ if __name__ == '__main__':
 	#Parse CLI Args
 	parser = argparse.ArgumentParser(description='Apply to Jobs Using GPT3.')
 	parser.add_argument('-j', '--jobid', action='store', default=False, type=str, required=False, help='Applies to a single job, provided by ID')
-	args = parser.parse_args()
+	parser.add_argument('-a', '--automatic', action='store', default=False, type=bool, required=False, help='Applies to jobs without checking')
+	globalSettings = parser.parse_args()
 
-	if (args.jobid):
-		specificJob(args.jobid)
+	if (globalSettings.jobid):
+		specificJob(globalSettings.jobid)
 	else:
 		main()
 

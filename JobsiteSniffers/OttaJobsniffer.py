@@ -57,7 +57,7 @@ class OttaJobsniffer:
 		"TEXT_AREA": "string",
 		"TEXT": "string",
 		"BOOLEAN": "bool",
-		"MULTIPLE_CHOICE": "multiple choice"
+		"DROPDOWN": "multiple choice"
 	}
 
 	def setupJob(self, externalID):
@@ -83,7 +83,7 @@ class OttaJobsniffer:
 				"type": qtype,
 				"rawtype": q['type'],
 				"response": None,
-				"choices": q['choices']
+				"choices": list(choice["label"] for choice in q['choices']) if q['choices'] else None
 			})
 
 		return {
@@ -112,7 +112,7 @@ class OttaJobsniffer:
 
 		if qtype == 'TEXT' or qtype == 'TEXT_AREA':
 			return self.updateNormalQuestionResponse(q['question'], q['response'], q['id'], "stringResponse")
-		if qtype == 'MULTIPLE_CHOICE':
+		if qtype == 'DROPDOWN':
 			return  self.updateMultipleChoiceQuestionResponse(q['question'], q['response'], q['id'], q['choices'])
 		if qtype == 'BOOLEAN':
 			return  self.updateNormalQuestionResponse(q['question'], q['response'], q['id'], "booleanResponse")
@@ -142,8 +142,8 @@ class OttaJobsniffer:
 			"atsQuestionId": questionId,
 			"input": {
 				"singleChoiceResponse": {
-					"label": "Yes",
-					"value": "1",
+					"label": choices[response],
+					"value": str(response),
 				}
 			}
 		})

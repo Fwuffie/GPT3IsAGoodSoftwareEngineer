@@ -58,6 +58,20 @@ class answeringEngine:
 				'response': {
 					"string": user.location
 				}
+			},
+			'notice': {
+				'keyWords': ['notice'],
+				'response': {
+					"string": "I can start work immediately.",
+					"int": 0
+				}
+			},
+			'criminal': {
+				'keyWords': ['criminal'],
+				'response': {
+					"string": "No, I have never been convicted of a criminal offence.",
+					"bool": False
+				}
 			}
 		}
 
@@ -78,8 +92,7 @@ class answeringEngine:
 	# 	Bool*
 	#	Multiple Choice
 	#	Date
-	def answerQuestion(self, question, qresponsetype, questionBackground = "", forceGPT = False):
-		if qresponsetype == "multiple choice": choice
+	def answerQuestion(self, question, qresponsetype, questionBackground = "", forceGPT = False, choices = None):
 		# Classify Question to see if it has preset answers
 		questionType = self.classifyQuestion(question)
 
@@ -91,11 +104,11 @@ class answeringEngine:
 				questionResponse = questionResponse(question, qresponsetype)
 		# Otherwise Get GPT to respond
 		else:
-			primedQuestion = self.primeQuestionForGPT(question, qresponsetype)
+			primedQuestion = self.primeQuestionForGPT(question, qresponsetype, choices)
 			try:
 				questionResponse = self.askGPT( questionBackground + primedQuestion )
 				#Return the question response in the correct format.
-				questionResponse = self.castGPTResponse( questionResponse, qresponsetype )
+				questionResponse = self.castGPTResponse( questionResponse, qresponsetype, choices )
 				#Todo: try and catch bad responses
 
 			except:
@@ -124,11 +137,12 @@ class answeringEngine:
 		return bestMatch[0] if bestMatch[1] > threshold else None
 
 	# Primes all 
-	def primeQuestionForGPT(self, question, qtype):
+	def primeQuestionForGPT(self, question, qtype, choices = None):
 		qtype = qtype.lower()
 		if qtype == "multiple choice":
-			choices = "\n".join(map(lambda x: x, question['choices']))
-			return "\nQ: %s (Type the number for the correct response)\n%s\n" % question
+			choices = "\n".join(map(lambda x: "%d. %s" % (x[0]+1, x[1]), enumerate(choices)))
+			print(choices)
+			return "\nQ: %s (Type the number for the correct response)\n%s\n" % (question, choices)
 		elif qtype == "bool":
 			return "\nQ: %s (Y/N)\nA:" % (question)
 		elif qtype == "int":
@@ -136,7 +150,7 @@ class answeringEngine:
 		else:
 			return "\nQ: %s\nA: " % (question)
 
-	def castGPTResponse(self, questionResponse, qresponsetype):
+	def castGPTResponse(self, questionResponse, qresponsetype, choices = None):
 		qresponsetype = qresponsetype.lower();
 		if qresponsetype == "string":
 			#Respond With The Whole GPT Response
@@ -151,7 +165,11 @@ class answeringEngine:
 			n = re.search(r'(^|[^\w])no?([^\w]|$)', questionResponse)
 			y = re.search(r'(^|[^\w])y(es)?([^\w]|$)', questionResponse)
 			return bool(y) if ( y or n ) else None
-
+		if qresponsetype == "multiple choice":
+			#Get the Number from the response
+			m = re.search(r'\d+', questionResponse)
+			# Subtract 1 to get index, GPT starts index at 1 as it's more human like
+			return (int(m.group(0)) - 1) if int(m.group(0)) <= len(choices) else None
 class user:
 
 	countryAliases: {
