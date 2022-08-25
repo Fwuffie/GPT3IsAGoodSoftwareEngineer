@@ -1,5 +1,11 @@
+#Start Logger
+import logger as lg
+lg.init()
+logger = lg.log;
+
 import json, argparse
 from answeringEngine import answeringEngine, user
+
 from JobsiteSniffers.SampleJobsniffer import SampleJobsniffer
 from JobsiteSniffers.OttaJobsniffer import OttaJobsniffer
 
@@ -8,7 +14,7 @@ fSecrets = open("secrets.json", "r")
 secrets = json.load(fSecrets)
 fSecrets.close()
 
-globalSettings;
+global globalSettings;
 
 
 def printDebug(text):
@@ -21,10 +27,10 @@ def specificJob(jobid):
 	ae = answeringEngine(secrets["OpenAISecret"], u)
 
 	job = os.setupJob( jobid )
-	applyToJob(ae, job)
+	applyToJob(ae, job, os)
 
-def applyToJob(ae, job):
-	print("JobID: %s" % job['exid'])
+def applyToJob(ae, job, sniffer):
+	logger.log("Applying to JobID: %s" % job['exid'])
 	print(job['listing'])
 	for i, question in enumerate(job['questions']):
 		if not question['type']: 
@@ -47,10 +53,21 @@ def applyToJob(ae, job):
 
 		job['questions'][i]['response'] = questionResponse
 	print("Applying to job...")
-	job['apply'](job['questions'])
-	print("Application Successful... Maybe")
-	
-
+	if job['apply'](job['questions']):
+		print("Application Successful")
+		logger.count("applications")
+		success = True
+	else:
+		logger.count("failedApplications")
+		success = False
+	logger.recordApplication([
+		job['exid'],
+		job['company'], 
+		job['position'],
+		sniffer.siteName,
+		sniffer.url + (sniffer.jobApplicationPath % job['exid']),
+		str(success)
+		])
 
 def main():
 	jobSniffers = []
@@ -73,19 +90,32 @@ def main():
 				job = next(jobSniffer)
 			except StopIteration:
 				continue
-			applyToJob(ae, job)
+			applyToJob(ae, job, jobSniffer)
 	return
 
 if __name__ == '__main__':
 	#Parse CLI Args
 	parser = argparse.ArgumentParser(description='Apply to Jobs Using GPT3.')
 	parser.add_argument('-j', '--jobid', action='store', default=False, type=str, required=False, help='Applies to a single job, provided by ID')
-	parser.add_argument('-a', '--automatic', action='store', default=False, type=bool, required=False, help='Applies to jobs without checking')
+	parser.add_argument('-a', '--automatic', action='store_true', default=False, required=False, help='Applies to jobs without checking')
+	parser.add_argument('-v', action='store_true', default=False, required=False, help='Verbose Mode')
+
 	globalSettings = parser.parse_args()
 
-	if (globalSettings.jobid):
-		specificJob(globalSettings.jobid)
-	else:
-		main()
+	
+	if (globalSettings.v):
+		logger.setLogLevel("debug")
 
-	exit()
+	try:
+		if (globalSettings.jobid):
+			specificJob(globalSettings.jobid)
+		else:
+			main()
+	except KeyboardInterrupt:
+		print("Exiting Gracefully.")
+	except Exception as e:
+		print(e)
+	finally:
+		logger.log("Applied to %i Jobs, %i failed applications" % (logger.getCount("applications"), logger.getCount("failedApplications")))
+		logger.close()
+		exit()

@@ -2,7 +2,11 @@ OttaGraphQLEndpoint = "https://api.otta.com/graphql"
 OttaLoginEndpoint = "https://api.otta.com/auth/login"
 Currency = "GBP"
 
-import requests
+import requests, traceback
+
+import logger as lg
+global logger
+logger = lg.log
 
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
@@ -15,9 +19,14 @@ jobUpdateQuestion = gql(open("JobsiteSniffers/ottaHelpers/answerQuestion.gql", "
 jobApply = gql(open("JobsiteSniffers/ottaHelpers/sendApplication.gql", "r").read())
 
 class OttaJobsniffer:
+	siteName = "otta"
+	url = "https://app.otta.com/"
+	jobApplicationPath = "jobs/%s/application"
+
 	jobslist = None;
 
 	def __init__(self, secrets):
+		
 		self.secrets = secrets
 		try:
 			self.attemptLogin(self.secrets['credentials'])
@@ -57,7 +66,8 @@ class OttaJobsniffer:
 		"TEXT_AREA": "string",
 		"TEXT": "string",
 		"BOOLEAN": "bool",
-		"DROPDOWN": "multiple choice"
+		"DROPDOWN": "multiple choice",
+		"MULTIPLE_CHOICE": "multiple choice"
 	}
 
 	def setupJob(self, externalID):
@@ -68,6 +78,7 @@ class OttaJobsniffer:
 			questions.append({
 				"id": None,
 				"question": "Why do you want to work at %s?" % jobData['company']['urlSafeName'],
+				"choices": None,
 				"type": "string",
 				"rawtype": "TEXT_AREA",
 				"response": None
@@ -88,6 +99,8 @@ class OttaJobsniffer:
 
 		return {
 			"exid": self.externalJobID,
+			"company": jobData['company']['urlSafeName'],
+			"position": jobData['title'],
 			"listing": self.generateJobListing(jobData),
 			"questions": questions,
 			"apply": self.apply
@@ -113,6 +126,8 @@ class OttaJobsniffer:
 		if qtype == 'TEXT' or qtype == 'TEXT_AREA':
 			return self.updateNormalQuestionResponse(q['question'], q['response'], q['id'], "stringResponse")
 		if qtype == 'DROPDOWN':
+			return  self.updateMultipleChoiceQuestionResponse(q['question'], q['response'], q['id'], q['choices'])
+		if qtype == 'MULTIPLE_CHOICE':
 			return  self.updateMultipleChoiceQuestionResponse(q['question'], q['response'], q['id'], q['choices'])
 		if qtype == 'BOOLEAN':
 			return  self.updateNormalQuestionResponse(q['question'], q['response'], q['id'], "booleanResponse")
@@ -150,7 +165,7 @@ class OttaJobsniffer:
 		return
 
 	def sendApplication(self, applied):
-		self.client.execute(jobApply, variable_values={
+		return self.client.execute(jobApply, variable_values={
 			"jobId": self.externalJobID,
 			"input": {
 				"internal": True,
@@ -158,21 +173,40 @@ class OttaJobsniffer:
 				"clicked": True,
 			}
 		})
-		return
+		
 
 	def apply(self, qna):
 		errors = False
-		self.sendApplication(False)
+		try:
+			self.sendApplication(False)
+		except:
+			logger.log("Allready applied to this place")
+			return False
+
+
 		for q in qna:
 			try:
 				self.updateQuestionResponse(q)
+				logger.writeReportEvent(logger.questionsfile, [
+					q['question'],
+					q['response'],
+					self.externalJobID
+					])
 			except Exception as e:
-				print('Question "%s" failed.' % q['question'])
-				print(e)
+				logger.log('Question "%s" failed.' % q['question'])
+				logger.debug(str(e))
 				errors = True
-		if not errors: self.sendApplication(True)
-		else: print("Complete the job application at https://app.otta.com/jobs/%s/apply" % self.externalJobID)
-		return
+		
+		try:
+			if errors: raise Exception("Error Updating Question Responses")
+			response = self.sendApplication(True)
+			if errors in response: raise Exception("Error sending application")
+			return True;
+		except Exception as e:
+			logger.log("Job Application Failed " + str(e))
+			logger.debug(traceback.format_exc())
+			logger.log("Complete the job application at https://app.otta.com/jobs/%s/apply" % self.externalJobID)
+			return False
 
 	def generateJobListing(self, rawJobData):
 		JobSpec = ""
@@ -202,18 +236,6 @@ Who you are
 
 Application
 ============
-Q: What is your name?
-A: Lily Page
-
-Q: Provide a link to your github.
-A: github.com/fwuffie
-
-Q: Which country are you from?
-A: Scotland, UK
-
-Q: Provide a link to a portfolio or website.
-A: portfolio.nyan.ca
-
 ''' % (
 		rawJobData['title'],
 		rawJobData['company']['urlSafeName'],
