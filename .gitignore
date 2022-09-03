@@ -1,4 +1,7 @@
 /GPT3JobEnv
+/env
+/venv
+
 *.pyc
 *.pyo
 secrets.json
