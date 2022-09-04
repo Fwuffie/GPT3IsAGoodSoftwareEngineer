@@ -3,10 +3,8 @@ import logger as lg
 lg.init()
 logger = lg.log;
 
-import json, argparse
+import json, argparse, traceback
 from answeringEngine import answeringEngine, user
-
-from JobsiteSniffers.ottaJobsniffer import ottaJobsniffer
 
 #Load Secret keys
 fSecrets = open("secrets.json", "r")
@@ -70,7 +68,7 @@ def applyToJob(ae, job, sniffer):
 
 		job['questions'][i]['response'] = questionResponse
 	print("Applying to job...")
-	if job['apply'](job['questions']):
+	if job['apply'](job):
 		print("Application Successful")
 		logger.count("successfullApplications")
 		success = True
@@ -123,12 +121,35 @@ def main():
 			applyToJob(ae, job, jobSniffer)
 	return
 
+def testScraper():
+	try:
+		from JobsiteSniffers.workableJobsniffer import workableJobsniffer
+		sniffer = workableJobsniffer(secrets['workableJobsniffer'])
+	except Exception as e:
+		print("Error with %s Plugin" % ("workableJobsniffer"))
+		print(e)
+		logger.debug(traceback.format_exc())
+		return
+
+	u = user(secrets["userInfo"])
+
+	for job in sniffer:
+		logger.log(job["listing"])
+
+	return
+
+
+
+	
+
 if __name__ == '__main__':
 	#Parse CLI Args
 	parser = argparse.ArgumentParser(description='Apply to Jobs Using GPT3.')
 	parser.add_argument('-j', '--jobid', action='store', default=False, type=str, required=False, help='Applies to a single job, provided by ID')
 	parser.add_argument('-a', '--automatic', action='store_true', default=False, required=False, help='Applies to jobs without checking')
 	parser.add_argument('-v', action='store_true', default=False, required=False, help='Verbose Mode')
+	parser.add_argument('--test-scraper', action='store', type=str, default=False, required=False, help="Tests a specific scraper and doesn't apply to the job")
+
 
 	globalSettings = parser.parse_args()
 

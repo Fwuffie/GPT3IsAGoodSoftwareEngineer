@@ -90,11 +90,10 @@ class answeringEngine:
 		return response['choices'][0]['text'].lstrip('\n')
 
 	# Question Types;
-	# 	String*
-	# 	Int*
-	# 	Bool*
+	# 	String
+	# 	Int
+	# 	Bool
 	#	Multiple Choice
-	#	Date
 	def answerQuestion(self, question, qresponsetype, questionBackground = "", forceGPT = False, choices = None):
 		# Classify Question to see if it has preset answers
 		questionType = self.classifyQuestion(question)

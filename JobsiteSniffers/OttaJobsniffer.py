@@ -188,7 +188,8 @@ class ottaJobsniffer:
 		})
 		
 
-	def apply(self, qna):
+	def apply(self, job):
+		qna = job['questions']
 		errors = False
 		try:
 			self.sendApplication(False)
