@@ -2,11 +2,9 @@ OttaGraphQLEndpoint = "https://api.otta.com/graphql"
 OttaLoginEndpoint = "https://api.otta.com/auth/login"
 Currency = "GBP"
 
-import requests, traceback
+import requests
 
-import logger as lg
-global logger
-logger = lg.log
+from logger import log as logger
 
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
@@ -157,8 +155,8 @@ class ottaJobsniffer:
 			"atsQuestionId": questionId,
 			"input": {
 				"singleChoiceResponse": {
-					"label": choices[response],
-					"value": str(response),
+					"label": choices[int(response) - 1],
+					"value": str(response - 1),
 				}
 			}
 		})
@@ -195,6 +193,7 @@ class ottaJobsniffer:
 			except Exception as e:
 				logger.log('Question "%s" failed.' % q['question'])
 				logger.debug(str(e))
+				logger.trace()
 				errors = True
 		
 		try:
@@ -204,7 +203,7 @@ class ottaJobsniffer:
 			return True;
 		except Exception as e:
 			logger.log("Job Application Failed " + str(e))
-			logger.debug(traceback.format_exc())
+			logger.trace()
 			logger.log("Complete the job application at https://app.otta.com/jobs/%s/apply" % self.externalJobID)
 			return False
 

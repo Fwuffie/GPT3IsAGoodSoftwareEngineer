@@ -1,6 +1,8 @@
 import re, json
 import openai
 
+from logger import log as logger
+
 class answeringEngine:
 	def __init__(self, openAiKey, user):
 		openai.api_key = openAiKey
@@ -11,7 +13,7 @@ class answeringEngine:
 	def loadPresetResponses(self, user):
 		return {
 			'usersName': {
-				'keyWords': [],
+				'keyWords': ['name', 'your'],
 				'response': {
 					"string": user.fullName
 				}
@@ -29,7 +31,7 @@ class answeringEngine:
 				}
 			},
 			'usersLinkedIn': {
-				'keyWords': ['linkedIn'],
+				'keyWords': ['linkedin'],
 				'response': {
 					"string": user.linkedIn
 				}
@@ -108,7 +110,7 @@ class answeringEngine:
 			try:
 				questionResponse = self.askGPT( questionBackground + primedQuestion )
 				#Return the question response in the correct format.
-				questionResponse = self.castGPTResponse( questionResponse, qresponsetype, choices )
+				questionResponse = self.castResponse( questionResponse, qresponsetype, choices )
 				#Todo: try and catch bad responses
 
 			except:
@@ -128,7 +130,7 @@ class answeringEngine:
 		for presetQuestion in self.presetQuestionResponses:
 			keywordMatches = 0
 			for word in self.presetQuestionResponses[presetQuestion]["keyWords"]:
-				if word in question.lower():
+				if word.lower() in question.lower():
 					keywordMatches += 1 / len(self.presetQuestionResponses[presetQuestion]["keyWords"])
 			pQuestionTypes.append( (presetQuestion, keywordMatches) )
 
@@ -150,7 +152,7 @@ class answeringEngine:
 		else:
 			return "\nQ: %s\nA: " % (question)
 
-	def castGPTResponse(self, questionResponse, qresponsetype, choices = None):
+	def castResponse(self, questionResponse, qresponsetype, choices = None):
 		qresponsetype = qresponsetype.lower();
 		if qresponsetype == "string":
 			#Respond With The Whole GPT Response
@@ -168,8 +170,7 @@ class answeringEngine:
 		if qresponsetype == "multiple choice":
 			#Get the Number from the response
 			m = re.search(r'\d+', questionResponse)
-			# Subtract 1 to get index, GPT starts index at 1 as it's more human like
-			return (int(m.group(0)) - 1) if int(m.group(0)) <= len(choices) else None
+			return int(m.group(0)) if int(m.group(0)) <= len(choices) else None
 class user:
 
 	countryAliases: {

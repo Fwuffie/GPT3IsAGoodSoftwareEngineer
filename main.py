@@ -26,38 +26,37 @@ def specificJob(jobid, sniffer):
 		raise Exception("Jobsniffer Plugin Not Found")
 
 	job = js.setupJob( jobid )
-	applyToJob(ae, job, os)
+	applyToJob(ae, job, js)
 
 def applyToJob(ae, job, sniffer):
 	logger.log("Applying to JobID: %s" % job['exid'])
+	logger.count("applications")
 	print(job['listing'])
 	for i, question in enumerate(job['questions']):
-		if not question['type']: 
-			print("Skipped Question: %s (%s)" % (question['question'], question['rawtype']))
-			continue
 		while True:
 			print("Q: %s (%s)" % (question['question'], question['type']))
 			questionResponse = ae.answerQuestion(question['question'], question['type'], job['listing'], choices = question['choices'])
 			print("A: %s\n" % questionResponse)
 
-			if globalSettings.automatic :
-				break;
-
-			verification = input("Is this response okay? [y]:continue | [r]:regenerate | [e]:edit - ")
-			if verification.lower() == 'y':
-				break;
-			if verification.lower() == 'e':
-				questionResponse = input("Please enter a new response: ")
+			if not globalSettings.automatic :
+				#Run User verification
+				verification = input("Is this response okay? [y]:continue | [r]:regenerate | [e]:edit - ")
+				if verification.lower() == 'r':
+					questionResponse = None
+				if verification.lower() == 'e':
+					questionResponse = input("Please enter a new response: ")
+					questionResponse = ae.castResponse(questionResponse, question['type'], question['choices'])
+				
+			if not questionResponse == None:
 				break;
 
 		job['questions'][i]['response'] = questionResponse
 	print("Applying to job...")
 	if job['apply'](job['questions']):
 		print("Application Successful")
-		logger.count("applications")
+		logger.count("successfullApplications")
 		success = True
 	else:
-		logger.count("failedApplications")
 		success = False
 	logger.recordApplication([
 		job['exid'],
@@ -119,6 +118,11 @@ if __name__ == '__main__':
 	if (globalSettings.v):
 		logger.setLogLevel("debug")
 
+	# Apply to one specific job
+	if (globalSettings.jobid):
+		specificJob(globalSettings.jobid, "ottaJobsniffer")
+		exit();
+
 	try:
 		main()
 	except KeyboardInterrupt:
@@ -127,6 +131,6 @@ if __name__ == '__main__':
 		logger.log(e)
 		logger.trace()
 	finally:
-		logger.log("Applied to %i Jobs, %i failed applications" % (logger.getCount("applications"), logger.getCount("failedApplications")))
+		logger.log("Applied to %i Jobs, %i failed applications" % (logger.getCount("successfullApplications"), logger.getCount("applications") - logger.getCount("successfullApplications")))
 		logger.close()
 		exit()

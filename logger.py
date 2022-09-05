@@ -46,10 +46,11 @@ class logger:
 
 	def writeLogEvent(self, file, logmessage):
 		time = datetime.datetime.today().strftime("%H:%M:%S.%f")[:-3]
-		file.write( "[%s] %s\n" % (time, logmessage) )
+		file.write( "[%s] %s\n" % (time, str(logmessage)) )
 		return
 
 	def writeReportEvent(self, file, reportArray):
+		reportArray = list(map(str, reportArray))
 		file.write(",".join(reportArray) + "\n")
 		return
 
