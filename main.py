@@ -16,24 +16,41 @@ fSecrets.close()
 global globalSettings;
 
 
-def specificJob(jobid, sniffer):
+def specificJobs(jobids, sniffer):
 	u = user(secrets["userInfo"])
 	ae = answeringEngine(secrets["OpenAISecret"], u)
 
 	js = loadJobSniffer(sniffer)
-
 	if not js:
 		raise Exception("Jobsniffer Plugin Not Found")
 
-	job = js.setupJob( jobid )
-	applyToJob(ae, job, js)
+	jobids = jobids.split(",")
+	jobCounter = 0
+	for jid in jobids:
+		try:
+			jobCounter += 1
+			logger.log('Applying to job %i of %i' % (jobCounter, len(jobids)))
+			job = js.setupJob( jid )
+			applyToJob(ae, job, js)
+		except Exception as e:
+			print(e)
+			logger.trace()
+			print("Job ID %s is invalid" % jid)
+
+
+	
+
+	
+
+	
 
 def applyToJob(ae, job, sniffer):
 	logger.log("Applying to JobID: %s" % job['exid'])
 	logger.count("applications")
 	print(job['listing'])
 	for i, question in enumerate(job['questions']):
-		while True:
+		attempts = 0;
+		while attempts < 4:
 			print("Q: %s (%s)" % (question['question'], question['type']))
 			questionResponse = ae.answerQuestion(question['question'], question['type'], job['listing'], choices = question['choices'])
 			print("A: %s\n" % questionResponse)
@@ -49,6 +66,7 @@ def applyToJob(ae, job, sniffer):
 				
 			if not questionResponse == None:
 				break;
+			attempts += 1
 
 		job['questions'][i]['response'] = questionResponse
 	print("Applying to job...")
@@ -118,9 +136,9 @@ if __name__ == '__main__':
 	if (globalSettings.v):
 		logger.setLogLevel("debug")
 
-	# Apply to one specific job
+	# Apply to specific jobs
 	if (globalSettings.jobid):
-		specificJob(globalSettings.jobid, "ottaJobsniffer")
+		specificJobs(globalSettings.jobid, "ottaJobsniffer")
 		exit();
 
 	try:

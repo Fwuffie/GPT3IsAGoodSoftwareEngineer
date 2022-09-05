@@ -13,7 +13,7 @@ class answeringEngine:
 	def loadPresetResponses(self, user):
 		return {
 			'usersName': {
-				'keyWords': ['name', 'your'],
+				'keyWords': ['your name', 'preferred name'],
 				'response': {
 					"string": user.fullName
 				}
@@ -98,6 +98,10 @@ class answeringEngine:
 		# Classify Question to see if it has preset answers
 		questionType = self.classifyQuestion(question)
 
+		# Check responseType Set
+		if qresponsetype == None:
+			return None
+
 		# Check GPT is enabled, it has a canned response, and the canned response is the correct type
 		if (not forceGPT) and questionType and (qresponsetype.lower() in self.presetQuestionResponses[questionType]['response']):
 			# Use the existing canned response, or call the canned response function
@@ -109,6 +113,7 @@ class answeringEngine:
 			primedQuestion = self.primeQuestionForGPT(question, qresponsetype, choices)
 			try:
 				questionResponse = self.askGPT( questionBackground + primedQuestion )
+				logger.debug("[RawResponse]: %s" % questionResponse)
 				#Return the question response in the correct format.
 				questionResponse = self.castResponse( questionResponse, qresponsetype, choices )
 				#Todo: try and catch bad responses

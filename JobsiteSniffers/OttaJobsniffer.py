@@ -65,7 +65,8 @@ class ottaJobsniffer:
 		"TEXT": "string",
 		"BOOLEAN": "bool",
 		"DROPDOWN": "multiple choice",
-		"MULTIPLE_CHOICE": "multiple choice"
+		"MULTIPLE_CHOICE": "multiple choice",
+		"CHECKBOXES": "multiple choice"
 	}
 
 	def setupJob(self, externalID):
@@ -124,13 +125,13 @@ class ottaJobsniffer:
 		if qtype == 'TEXT' or qtype == 'TEXT_AREA':
 			return self.updateNormalQuestionResponse(q['question'], q['response'], q['id'], "stringResponse")
 		if qtype == 'DROPDOWN':
-			return  self.updateMultipleChoiceQuestionResponse(q['question'], q['response'], q['id'], q['choices'])
+			return  self.updateSingleChoiceQuestionResponse(q['question'], q['response'], q['id'], q['choices'])
 		if qtype == 'MULTIPLE_CHOICE':
-			return  self.updateMultipleChoiceQuestionResponse(q['question'], q['response'], q['id'], q['choices'])
+			return  self.updateSingleChoiceQuestionResponse(q['question'], q['response'], q['id'], q['choices'])
 		if qtype == 'BOOLEAN':
 			return  self.updateNormalQuestionResponse(q['question'], q['response'], q['id'], "booleanResponse")
 		if qtype == 'CHECKBOXES':
-			return  None
+			return  self.updateSingleChoiceQuestionResponse(q['question'], q['response'], q['id'], q['choices'])
 		if qtype == 'DATE':
 			return  None
 		if qtype == 'NUMERIC':
@@ -148,7 +149,7 @@ class ottaJobsniffer:
 		self.client.execute(jobUpdateQuestion, variable_values=variables)
 		return
 
-	def updateMultipleChoiceQuestionResponse(self, question, response, questionId, choices):
+	def updateSingleChoiceQuestionResponse(self, question, response, questionId, choices):
 		self.client.execute(jobUpdateQuestion, variable_values={
 			"jobId": self.externalJobID,
 			"question": question,
@@ -158,6 +159,20 @@ class ottaJobsniffer:
 					"label": choices[int(response) - 1],
 					"value": str(response - 1),
 				}
+			}
+		})
+		return
+
+	def updateMultipleChoiceQuestionResponse(self, question, response, questionId, choices):
+		self.client.execute(jobUpdateQuestion, variable_values={
+			"jobId": self.externalJobID,
+			"question": question,
+			"atsQuestionId": questionId,
+			"input": {
+				"multipleChoiceResponse": [{
+					"label": choices[int(response) - 1],
+					"value": str(response - 1),
+				}]
 			}
 		})
 		return
