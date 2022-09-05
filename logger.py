@@ -62,14 +62,19 @@ class logger:
 		self.logfile.close()
 		return
 
+	def error(self, logmessage):
+		print(ansicodes.RED + logmessage + ansicodes.RST)
+		self.writeLogEvent(self.logfile, "[WARN] "+ logmessage)
+		return
+
 	def log(self, logmessage):
-		print(logmessage)
-		self.writeLogEvent(self.logfile, logmessage)
+		print(ansicodes.RST + logmessage + ansicodes.RST)
+		self.writeLogEvent(self.logfile, "[LOG] "+ logmessage)
 		return
 
 	def debug(self, logmessage):
 		if self.level == "debug":
-			print(logmessage)
+			print(ansicodes.BLUE + logmessage + ansicodes.RST)
 		self.writeLogEvent(self.logfile, "[DEBUG] "+ logmessage)
 		return
 
@@ -90,3 +95,12 @@ class logger:
 			self.counters[label] = 1
 		self.writeLogEvent(self.logfile, "Count: %s	(%i)" % (label, self.counters[label]))
 		return self.counters[label]
+
+class ansicodes:
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    RST = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'

@@ -2,6 +2,7 @@ import re, json
 import openai
 
 from logger import log as logger
+from logger import ansicodes
 
 class answeringEngine:
 	def __init__(self, openAiKey, user):
@@ -119,7 +120,7 @@ class answeringEngine:
 				#Todo: try and catch bad responses
 
 			except:
-				print("GPT3 was unable to respond")
+				print(ansicodes.GREEN + "GPT3 was unable to respond" + ansicodes.RST)
 				questionResponse = None
 
 		return questionResponse;
