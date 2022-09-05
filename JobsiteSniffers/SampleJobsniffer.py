@@ -42,7 +42,7 @@ requirementsSample = [
 ]
 
 
-class SampleJobsniffer:
+class sampleJobsniffer:
 	jobsToReturn = 1
 
 	def __iter__(self):

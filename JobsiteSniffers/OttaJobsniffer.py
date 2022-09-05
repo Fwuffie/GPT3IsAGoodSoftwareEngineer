@@ -18,7 +18,7 @@ jobdataQuery = gql(open("JobsiteSniffers/ottaHelpers/getJobData.gql", "r").read(
 jobUpdateQuestion = gql(open("JobsiteSniffers/ottaHelpers/answerQuestion.gql", "r").read())
 jobApply = gql(open("JobsiteSniffers/ottaHelpers/sendApplication.gql", "r").read())
 
-class OttaJobsniffer:
+class ottaJobsniffer:
 	siteName = "otta"
 	url = "https://app.otta.com/"
 	jobApplicationPath = "jobs/%s/application"

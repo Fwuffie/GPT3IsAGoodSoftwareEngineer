@@ -1,4 +1,4 @@
-import os, datetime
+import os, datetime, traceback, pprint
 
 
 def init():
@@ -7,8 +7,10 @@ def init():
 
 class logger:
 
+
 	def __init__(self):
 		self.level = "default"
+		self.pp = pprint.PrettyPrinter(indent=2)
 
 		#Create Logfile dir if it doesn't exist
 		if not os.path.exists("logs"):
@@ -69,6 +71,13 @@ class logger:
 			print(logmessage)
 		self.writeLogEvent(self.logfile, "[DEBUG] "+ logmessage)
 		return
+
+	def trace(self):
+		trace = traceback.format_exc()
+		self.debug(trace)
+		self.writeLogEvent(self.logfile, "[DEBUG] "+ trace)
+		return
+
 
 	def getCount(self, label):
 		return self.counters[label] if label in self.counters else 0

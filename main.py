@@ -6,8 +6,7 @@ logger = lg.log;
 import json, argparse
 from answeringEngine import answeringEngine, user
 
-from JobsiteSniffers.SampleJobsniffer import SampleJobsniffer
-from JobsiteSniffers.OttaJobsniffer import OttaJobsniffer
+from JobsiteSniffers.ottaJobsniffer import ottaJobsniffer
 
 #Load Secret keys
 fSecrets = open("secrets.json", "r")
@@ -17,16 +16,16 @@ fSecrets.close()
 global globalSettings;
 
 
-def printDebug(text):
-	if debug:
-		print(text)
-
-def specificJob(jobid):
-	os = OttaJobsniffer(secrets['ottaJobsniffer'])
+def specificJob(jobid, sniffer):
 	u = user(secrets["userInfo"])
 	ae = answeringEngine(secrets["OpenAISecret"], u)
 
-	job = os.setupJob( jobid )
+	js = loadJobSniffer(sniffer)
+
+	if not js:
+		raise Exception("Jobsniffer Plugin Not Found")
+
+	job = js.setupJob( jobid )
 	applyToJob(ae, job, os)
 
 def applyToJob(ae, job, sniffer):
@@ -69,16 +68,30 @@ def applyToJob(ae, job, sniffer):
 		str(success)
 		])
 
-def main():
-	jobSniffers = []
+# Returns Itterable jobsniffer based on module name.
+def loadJobSniffer(jobSnifferName):
+	snifferData = secrets["sniffers"][jobSnifferName]
+
+	if not snifferData["enabled"]:
+		return False
 
 	try:
-		jobSniffers.append(OttaJobsniffer(secrets['ottaJobsniffer']))
-	except:
-		print("Error with %s Plugin" % ("OttaJobsniffer"))
+		jsPlugin = __import__("JobsiteSniffers.%s" % jobSnifferName, globals(), locals(), [jobSnifferName], 0)
+		js = getattr(jsPlugin, jobSnifferName)
+		return js(snifferData)
+	except Exception as e:
+		print(e)
+		logger.trace()
+		print("Error with %s Plugin" % (jobSnifferName))
+		return False
 
-	#convert Jobsniffers to iters
-	jobSniffers = list(map(iter, jobSniffers))
+def main():
+	jobSniffers = [];
+
+	for sniffer in secrets["sniffers"]:
+		js = loadJobSniffer(sniffer)
+		if js:
+			jobSniffers.append( iter(js) )
 
 	u = user(secrets["userInfo"])
 	ae = answeringEngine(secrets["OpenAISecret"], u)
@@ -107,14 +120,12 @@ if __name__ == '__main__':
 		logger.setLogLevel("debug")
 
 	try:
-		if (globalSettings.jobid):
-			specificJob(globalSettings.jobid)
-		else:
-			main()
+		main()
 	except KeyboardInterrupt:
 		print("Exiting Gracefully.")
 	except Exception as e:
-		print(e)
+		logger.log(e)
+		logger.trace()
 	finally:
 		logger.log("Applied to %i Jobs, %i failed applications" % (logger.getCount("applications"), logger.getCount("failedApplications")))
 		logger.close()
