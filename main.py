@@ -18,7 +18,7 @@ def specificJobs(jobids, sniffer):
 	u = user(secrets["userInfo"])
 	ae = answeringEngine(secrets["OpenAISecret"], u)
 
-	js = loadJobSniffer(sniffer)
+	js = loadJobSniffer(secrets)
 	if not js:
 		raise Exception("Jobsniffer Plugin Not Found")
 
@@ -48,10 +48,16 @@ def applyToJob(ae, job, sniffer):
 	print(job['listing'])
 	for i, question in enumerate(job['questions']):
 		attempts = 0;
+		if not (question['response'] == None):
+			print(question)
+			continue
+		if question['type'] == None:
+			logger.debug('Question "%s" has an invalid type.' % question['question'])
+			continue
 		while attempts < 4:
-			print("Q: %s (%s)" % (question['question'], question['type']))
+			print(ae.primeQuestionForGPT(question['question'], question['type'], question['choices']), end="")
 			questionResponse = ae.answerQuestion(question['question'], question['type'], job['listing'], choices = question['choices'])
-			print("A: %s\n" % questionResponse)
+			print("%s\n" % questionResponse)
 
 			if not globalSettings.automatic :
 				#Run User verification
@@ -60,8 +66,8 @@ def applyToJob(ae, job, sniffer):
 					questionResponse = None
 				if verification.lower() == 'e':
 					questionResponse = input("Please enter a new response: ")
-					questionResponse = ae.castResponse(questionResponse, question['type'], question['choices'])
-				
+					questionResponse = ae.castResponse(questionResponse, question['type'], question['choices'])	
+
 			if not questionResponse == None:
 				break;
 			attempts += 1
@@ -78,24 +84,21 @@ def applyToJob(ae, job, sniffer):
 		job['exid'],
 		job['company'], 
 		job['position'],
-		sniffer.siteName,
-		sniffer.url + (sniffer.jobApplicationPath % job['exid']),
 		str(success)
 		])
 
 # Returns Itterable jobsniffer based on module name.
-def loadJobSniffer(jobSnifferName):
+def loadJobSniffer(jobSnifferName, forceLoad=False):
 	snifferData = secrets["sniffers"][jobSnifferName]
 
-	if not snifferData["enabled"]:
+	if not (forceLoad or snifferData["enabled"]) :
 		return False
 
 	try:
 		jsPlugin = __import__("JobsiteSniffers.%s" % jobSnifferName, globals(), locals(), [jobSnifferName], 0)
 		js = getattr(jsPlugin, jobSnifferName)
-		return js(snifferData)
+		return js(secrets)
 	except Exception as e:
-		print(e)
 		logger.trace()
 		print("Error with %s Plugin" % (jobSnifferName))
 		return False
@@ -103,10 +106,16 @@ def loadJobSniffer(jobSnifferName):
 def main():
 	jobSniffers = [];
 
-	for sniffer in secrets["sniffers"]:
-		js = loadJobSniffer(sniffer)
+	# Load all sniffers or single jobsniffer
+	if globalSettings.s:
+		js = loadJobSniffer(globalSettings.s, True)
 		if js:
 			jobSniffers.append( iter(js) )
+	else:
+		for sniffer in secrets["sniffers"]:
+			js = loadJobSniffer(sniffer)
+			if js:
+				jobSniffers.append( iter(js) )
 
 	u = user(secrets["userInfo"])
 	ae = answeringEngine(secrets["OpenAISecret"], u)
@@ -116,27 +125,14 @@ def main():
 		for jobSniffer in jobSniffers:
 			try:
 				job = next(jobSniffer)
+				applyToJob(ae, job, jobSniffer)
 			except StopIteration:
 				continue
-			applyToJob(ae, job, jobSniffer)
-	return
-
-def testScraper():
-	try:
-		from JobsiteSniffers.workableJobsniffer import workableJobsniffer
-		sniffer = workableJobsniffer(secrets['workableJobsniffer'])
-	except Exception as e:
-		print("Error with %s Plugin" % ("workableJobsniffer"))
-		print(e)
-		logger.debug(traceback.format_exc())
-		return
-
-	u = user(secrets["userInfo"])
-
-	for job in sniffer:
-		logger.log(job["listing"])
+			except Exception as e:
+				logger.trace()
 
 	return
+
 
 
 
@@ -148,7 +144,7 @@ if __name__ == '__main__':
 	parser.add_argument('-j', '--jobid', action='store', default=False, type=str, required=False, help='Applies to a single job, provided by ID')
 	parser.add_argument('-a', '--automatic', action='store_true', default=False, required=False, help='Applies to jobs without checking')
 	parser.add_argument('-v', action='store_true', default=False, required=False, help='Verbose Mode')
-	parser.add_argument('--test-scraper', action='store', type=str, default=False, required=False, help="Tests a specific scraper and doesn't apply to the job")
+	parser.add_argument('-s', action='store', type=str, default=False, required=False, help="Runs a specific jobscraper")
 
 
 	globalSettings = parser.parse_args()
@@ -167,7 +163,6 @@ if __name__ == '__main__':
 	except KeyboardInterrupt:
 		print("Exiting Gracefully.")
 	except Exception as e:
-		logger.log(e)
 		logger.trace()
 	finally:
 		logger.log("Applied to %i Jobs, %i failed applications" % (logger.getCount("successfullApplications"), logger.getCount("applications") - logger.getCount("successfullApplications")))

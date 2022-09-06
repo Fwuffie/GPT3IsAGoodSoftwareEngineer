@@ -25,7 +25,7 @@ class ottaJobsniffer:
 
 	def __init__(self, secrets):
 		
-		self.secrets = secrets
+		self.secrets = secrets["sniffers"]["ottaJobsniffer"]
 		try:
 			self.attemptLogin(self.secrets['credentials'])
 		except:

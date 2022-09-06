@@ -13,10 +13,40 @@ class answeringEngine:
 
 	def loadPresetResponses(self, user):
 		return {
+			'usersFirstname': {
+				'keyWords': ['first name'],
+				'response': {
+					"string": user.firstname
+				}
+			},
+			'usersSurname': {
+				'keyWords': ['last name', 'surname'],
+				'response': {
+					"string": user.surname
+				}
+			},
 			'usersName': {
 				'keyWords': ['your name', 'preferred name'],
 				'response': {
 					"string": user.fullName
+				}
+			},
+			'usersEmail': {
+				'keyWords': ['email'],
+				'response': {
+					"string": user.email
+				}
+			},
+			'usersPhone': {
+				'keyWords': ['phone'],
+				'response': {
+					"string": user.telephone
+				}
+			},
+			'usersHeadline': {
+				'keyWords': ['headline'],
+				'response': {
+					"string": user.headline
 				}
 			},
 			'usersPronouns': {
@@ -57,7 +87,7 @@ class answeringEngine:
 				}
 			},
 			'location': {
-				'keyWords': ['country', 'locat', 'based', 'live'],
+				'keyWords': ['country', 'locat', 'based', 'live', 'address'],
 				'response': {
 					"string": user.location
 				}
@@ -80,7 +110,7 @@ class answeringEngine:
 
 
 	def askGPT(self, primedString, tokens=256, temp=1.1):
-		print("Generating GPT Response...")
+		print(ansicodes.GREEN + "Generating GPT Response..." + ansicodes.RST)
 		response = openai.Completion.create(
 		  model="text-davinci-002",
 		  prompt=primedString,
@@ -113,7 +143,7 @@ class answeringEngine:
 			primedQuestion = self.primeQuestionForGPT(question, qresponsetype, choices)
 			try:
 				questionResponse = self.askGPT( questionBackground + primedQuestion )
-				logger.debug("[RawResponse]: %s" % questionResponse)
+				logger.debug("[RawResponse][Type: %s]: %s" % (qresponsetype, questionResponse))
 				#Return the question response in the correct format.
 				questionResponse = self.castResponse( questionResponse, qresponsetype, choices )
 				#Todo: try and catch bad responses
@@ -176,6 +206,7 @@ class answeringEngine:
 			#Get the Number from the response
 			m = re.search(r'\d+', questionResponse)
 			return int(m.group(0)) if int(m.group(0)) <= len(choices) else None
+			
 class user:
 
 	countryAliases: {
@@ -184,8 +215,11 @@ class user:
 	}
 
 	def __init__(self, userdata):
-		self.fullName = userdata["fullName"]
+		self.firstname = userdata["firstname"]
+		self.surname = userdata["surname"]
+		self.fullName = userdata["firstname"] + userdata["surname"]
 		self.email = userdata["email"]
+		self.headline = userdata["headline"]
 		self.pronouns = userdata["pronouns"]
 		self.gitURL = userdata["gitURL"]
 		self.linkedIn = userdata["linkedIn"]

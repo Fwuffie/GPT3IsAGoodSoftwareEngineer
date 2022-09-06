@@ -6,3 +6,5 @@
 *.pyo
 secrets.json
 logs/*
+
+resume.*

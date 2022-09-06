@@ -18,7 +18,7 @@ class logger:
 
 		#Create Log
 		filename = str(datetime.date.today()) + ".log"
-		self.logfile = open("logs/"+filename, "a")
+		self.logfile = open("logs/"+filename, "a", encoding='utf-8')
 
 		#Create Report
 		filename = str(datetime.date.today()) + ".report.csv"
@@ -26,14 +26,14 @@ class logger:
 			self.reportfile = open("logs/"+filename, "x")
 			self.recordApplication(["JobID", "Company", "Position", "Plugin", "Url", "Success"])
 		except:
-			self.reportfile = open("logs/"+filename, "a")
+			self.reportfile = open("logs/"+filename, "a", encoding='utf-8')
 
 		filename = str(datetime.date.today()) + ".questions.csv"
 		try:
 			self.questionsfile = open("logs/"+filename, "x")
 			self.recordApplication(["Question", "Response", "JobID"])
 		except:
-			self.questionsfile = open("logs/"+filename, "a")
+			self.questionsfile = open("logs/"+filename, "a", encoding='utf-8')
 
 		#Initialise Counters
 		self.counters = {}
