@@ -1,5 +1,7 @@
 # GPT3 Is A Good Software Engineer
 
+The primary development branch for this repo is [LetsBuildAWebapp](https://github.com/Fwuffie/GPT3IsAGoodSoftwareEngineer/tree/LetsBuildAWebapp), Master Is Kept as a working MVP CLI Tool.
+
 A GPT3 App to automate job applications.
 
 ## Getting Started
